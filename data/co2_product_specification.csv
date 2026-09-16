@@ -1,0 +1,8 @@
+component,limit_type,limit_value,unit,source_url
+CO2,minimum,99.81,mol-%,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf
+H2O,maximum,30,ppm-mol,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf
+O2,maximum,10,ppm-mol,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf
+NOx,maximum,1.5,ppm-mol,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf
+SOx,maximum,10,ppm-mol,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf
+CO,maximum,100,ppm-mol,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf
+

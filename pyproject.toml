@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "north-co2-model"
+version = "0.4.0"
+description = "Interactive capture, purification, Peng-Robinson pipeline transport and environmental screening model for northern France industrial CO2 sources."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26,<3",
+  "matplotlib>=3.8,<4",
+  "networkx>=3.2,<4",
+  "pandas>=2.2,<4",
+  "plotly>=5.24,<7",
+  "streamlit>=1.40,<2",
+]
+
+[project.scripts]
+north-co2-model = "north_co2_model.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

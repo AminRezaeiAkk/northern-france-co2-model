@@ -1,0 +1,28 @@
+component,limit_type,limit_value,unit,screened_in_model,model_field,validation_status,source_url,notes
+CO2,minimum,99.81,mol-%,true,product_co2_mol_pct,screened,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Balance basis in the public cargo specification
+H2O,maximum,30,ppm-mol,true,product_h2o_ppmv,screened,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Dehydration performance estimate available
+O2,maximum,10,ppm-mol,true,product_o2_ppmv,screened,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Non-condensable estimate available
+SOx,maximum,10,ppm-mol,true,product_sox_ppmv,screened,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Polishing estimate available
+NOx,maximum,1.5,ppm-mol,true,product_nox_ppmv,screened,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Polishing estimate available
+H2S,maximum,1,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure by source and confirm removal guarantee
+Amine,maximum,10,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Relevant for solvent-based capture trains
+NH3,maximum,10,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure and confirm polishing duty
+Formaldehyde,maximum,20,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure degradation products
+Acetaldehyde,maximum,20,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure degradation products
+Hg,maximum,0.0003,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Trace mercury assay and guard-bed review
+CO,maximum,100,ppm-mol,true,product_co_ppmv,screened,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Non-condensable estimate available
+H2,maximum,50,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Particularly relevant for steel gases
+CH4,maximum,100,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure non-condensables
+N2,maximum,50,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure non-condensables
+Ar,maximum,100,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure non-condensables
+Methanol,maximum,30,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure oxygenates
+Ethanol,maximum,1,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure oxygenates
+Total VOC,maximum,10,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Additional VOCs beyond separately listed compounds
+MEG,maximum,0.2,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Confirm glycol carryover
+TEG,maximum,0.2,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Confirm glycol carryover
+BTEX,maximum,0.5,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Benzene toluene ethylbenzene and xylenes
+Ethylene,maximum,50,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure hydrocarbons
+HCN,maximum,100,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Particularly relevant for steel gases
+Aliphatic hydrocarbons C3+,maximum,1100,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Additional individual hydrocarbon group limits apply
+Ethane,maximum,75,ppm-mol,false,,assay required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Measure hydrocarbons
+Solids particles and dust,maximum,1.0,micrometre,false,,filtration validation required,https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf,Maximum particle size

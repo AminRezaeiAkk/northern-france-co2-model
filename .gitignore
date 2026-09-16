@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.idea/
+.vscode/
+.codex_tmp/
+
+# Generated model results (keep the explanatory README).
+outputs/*/
+outputs/scenario_comparison.csv
+outputs/scenario_comparison.md
+

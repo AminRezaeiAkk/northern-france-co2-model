@@ -1,0 +1,70 @@
+[finance]
+discount_rate = 0.06
+project_life_years = 25
+electricity_price_eur_per_mwh = 70.0
+steam_price_eur_per_gj = 12.0
+electricity_emission_factor_tco2_per_mwh = 0.050
+steam_emission_factor_tco2_per_gj = 0.056
+currency_year = 2026
+
+[transport]
+operating_hours_per_year = 8000.0
+co2_viscosity_pa_s = 0.00007
+pipe_roughness_m = 0.000045
+inlet_pressure_bar = 110.0
+minimum_arrival_pressure_bar = 85.0
+maximum_velocity_m_per_s = 2.5
+maximum_edge_length_km = 260.0
+diameter_candidates_mm = [100, 150, 200, 250, 300, 350, 400, 450, 500, 600]
+capex_eur_per_km_at_300mm = 1900000.0
+diameter_cost_exponent = 1.20
+fixed_opex_fraction = 0.020
+source_connection_capex_eur = 5000000.0
+co2_leakage_fraction_per_100km = 0.0002
+cost_uncertainty_fraction = 0.35
+equation_of_state = "Peng-Robinson"
+temperature_c = 35.0
+
+[transport.eos_composition]
+CO2 = 0.9992
+N2 = 0.0005
+O2 = 0.0001
+Ar = 0.0002
+
+[environment]
+assessment_year = 2030
+pipeline_construction_gco2e_per_tkm = 1.2
+
+[sink]
+name = "Port of Dunkerque receiving site"
+node_type = "receiving_site"
+x_l93_m = 636000.0
+y_l93_m = 7105000.0
+
+[scenarios.announced_2030]
+description = "Project-backed CalCC and K6 flows delivered to the Port of Dunkerque receiving site."
+flow_basis = "announced_product"
+active_source_ids = ["S1", "S3"]
+sink_capacity_tpy = 1500000.0
+enforce_sink_capacity = true
+
+[scenarios.reported_2024_cluster]
+description = "All five sources using verified IREP 2024 emissions and source-specific capture assumptions."
+flow_basis = "irep_2024_total"
+active_source_ids = ["S1", "S2", "S3", "S4", "S5"]
+sink_capacity_tpy = 4000000.0
+enforce_sink_capacity = true
+
+[scenarios.user_inventory_4mt]
+description = "All five sources using the original user inventory, constrained to 4 Mt/y at Dunkerque."
+flow_basis = "user_case"
+active_source_ids = ["S1", "S2", "S3", "S4", "S5"]
+sink_capacity_tpy = 4000000.0
+enforce_sink_capacity = true
+
+[scenarios.user_inventory_unconstrained]
+description = "Diagnostic upper-bound using the original user emissions without a binding receiving-site constraint."
+flow_basis = "user_case"
+active_source_ids = ["S1", "S2", "S3", "S4", "S5"]
+sink_capacity_tpy = 12000000.0
+enforce_sink_capacity = false
