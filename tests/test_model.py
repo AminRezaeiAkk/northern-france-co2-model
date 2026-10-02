@@ -3,7 +3,12 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from north_co2_model.model import load_model_inputs, run_custom_scenario, run_scenario
+from north_co2_model.model import (
+    build_material_comparison,
+    load_model_inputs,
+    run_custom_scenario,
+    run_scenario,
+)
 
 
 class ModelRegressionTests(unittest.TestCase):
@@ -97,6 +102,54 @@ class ModelRegressionTests(unittest.TestCase):
                     segment["velocity_m_per_s"],
                     transport["maximum_velocity_m_per_s"] + 1e-8,
                 )
+
+
+    def test_pipeline_material_screen_reconciles(self) -> None:
+        summary = self.announced.summary
+        self.assertEqual(summary["pipeline_material_id"], "x65")
+        self.assertGreater(summary["pipeline_steel_mass_t"], 0.0)
+        self.assertGreater(summary["pipeline_wall_thickness_min_mm"], 0.0)
+        self.assertAlmostEqual(
+            summary["pipeline_material_embodied_carbon_delta_tco2e"],
+            0.0,
+            places=6,
+        )
+        for segment in self.announced.pipeline_segments:
+            self.assertAlmostEqual(segment["material_capex_multiplier"], 1.0, places=12)
+
+    def test_low_carbon_steel_tradeoff_is_visible(self) -> None:
+        comparison = {
+            row["material_id"]: row
+            for row in build_material_comparison(
+                self.announced, self.inputs.config, carbon_value_eur_per_t=100.0
+            )
+        }
+        self.assertEqual(set(comparison), set(self.inputs.config["transport"]["materials"]))
+        self.assertLess(
+            comparison["x65_low_carbon"]["pipeline_material_embodied_carbon_tco2e"],
+            comparison["x65"]["pipeline_material_embodied_carbon_tco2e"],
+        )
+        self.assertGreater(
+            comparison["x65_low_carbon"]["pipeline_capex_eur"],
+            comparison["x65"]["pipeline_capex_eur"],
+        )
+
+    def test_custom_material_override_does_not_mutate_inputs(self) -> None:
+        custom = run_custom_scenario(
+            self.inputs,
+            active_source_ids=["S1", "S3"],
+            flow_basis="announced_product",
+            sink_capacity_tpy=1_500_000.0,
+            transport_overrides={"pipeline_material": "x65_low_carbon"},
+        )
+        self.assertEqual(custom.summary["pipeline_material_id"], "x65_low_carbon")
+        self.assertEqual(self.inputs.config["transport"]["pipeline_material"], "x65")
+        self.assertLess(
+            custom.summary[
+                "environmental_pipeline_material_delta_annualized_tco2e_per_year"
+            ],
+            0.0,
+        )
 
     def test_three_stage_costs_are_separate_and_reconcile(self) -> None:
         summary = self.announced.summary

@@ -111,6 +111,47 @@ The installed-cost correlation is anchored at €1.9 million/km for DN 300, scal
 
 Reference: https://www.netl.doe.gov/projects/files/QualityGuidelinesforEnergySystemStudiesCarbonDioxideTransportandStorageCostsinNETLStudies_073124.pdf
 
+### 5.1 Pipeline-material decision screen
+
+The dashboard compares X65, X70, X80, low-carbon X65 and 13Cr corrosion-resistant alloy on the **same optimized topology and hydraulic internal diameters**. This isolates the first-order material trade-off and prevents network changes from obscuring the comparison.
+
+The pressure wall is screened with the Barlow relation:
+
+`t_pressure = P_design × D_internal / (2 × design factor × SMYS)`
+
+The displayed wall is:
+
+`t = max(t_pressure + corrosion allowance, 6.4 mm)`
+
+The shared assumptions are 120 bar design pressure, 0.72 design factor and 7,850 kg/m³ steel density. X65, X70, X80 and low-carbon X65 use a 3 mm corrosion allowance; the indicative 13Cr case uses 1 mm. Pipe mass is calculated from the annular steel area and indicative route length.
+
+The v0.4 X65 installed-cost correlation is retained exactly as the reference. For alternatives, 35% of installed route CAPEX is treated as material-sensitive:
+
+`CAPEX multiplier = 0.65 + 0.35 × (alternative steel mass / X65 steel mass) × relative material price`
+
+The other 65% represents installation, civil works, route preparation and other costs not assumed to scale directly with pipe material. Embodied-carbon factors are screening values in t CO₂-eq/t steel. The environmental ledger adds only the alternative material's delta versus X65, annualized over project life, because the generic pipeline-construction factor already contains the baseline construction burden.
+
+| Material option | SMYS (MPa) | Corrosion allowance (mm) | Relative material price | Embodied carbon (t CO₂-eq/t steel) | Status |
+|---|---:|---:|---:|---:|---|
+| X65 reference | 448 | 3 | 1.00 | 2.18 | Reference screen |
+| X70 | 483 | 3 | 1.05 | 2.18 | Comparative screen |
+| X80 | 552 | 3 | 1.12 | 2.18 | Comparative screen |
+| Low-carbon X65 | 448 | 3 | 1.08 | 0.95 | Procurement scenario; supplier EPD required |
+| 13Cr CRA | 450 | 1 | 2.40 | 4.50 | Indicative alternative; service suitability and supplier EPD required |
+
+The X-grade SMYS values follow the standard grade designations used for line pipe. The 2.18 t CO₂-eq/t conventional-steel factor uses worldsteel's 2024 global average GHG intensity for crude steel as a screening anchor, not a product-specific line-pipe EPD. The price multipliers, low-carbon-steel factor and CRA factor are explicit scenario assumptions; replace them with supplier quotations and EN 15804/ISO 14025 product declarations before an investment decision.
+
+This calculation is suitable for management sensitivity only. Final selection requires the applicable pipeline code and location class, validated CO₂ composition and water limit, decompression/fracture assessment, toughness, fatigue, corrosion and erosion studies, welding and inspection requirements, fittings and valves, procurement availability, route-specific loads, and supplier environmental product declarations.
+
+Applicable design references for the next phase include ISO 27913:2024 and DNV-RP-F104. The latter specifically covers CO₂ properties, safety, design premises, materials, construction, operation and re-qualification; neither is replaced by the dashboard screen.
+
+References:
+
+- https://www.iso.org/standard/76676.html
+- https://www.iso.org/standard/84840.html
+- https://www.dnv.com/energy/standards-guidelines/dnv-rp-f104-design-and-operation-of-carbon-dioxide-pipelines/
+- https://worldsteel.org/wider-sustainability/sustainability-indicators/
+
 ## 6. Cost and emissions accounting
 
 Capital is annualized with:
@@ -135,7 +176,7 @@ The environmental layer is a screening assessment attached to every scenario. It
 
 The environmental lifecycle net avoided CO₂ is:
 
-`pipeline product − leakage − capture energy emissions − purification energy emissions − pipeline use-phase LCA − pipeline construction LCA`
+`pipeline product − leakage − capture energy emissions − purification energy emissions − pipeline use-phase LCA − pipeline construction LCA − annualized material delta versus X65`
 
 Alternative truck, barge and rail factors are included only as transport screening benchmarks. This is not an ISO-compliant project LCA. Biodiversity, land occupation, water impacts, crossings, local air quality, noise and construction disturbance require a routed corridor and project-specific inventories.
 

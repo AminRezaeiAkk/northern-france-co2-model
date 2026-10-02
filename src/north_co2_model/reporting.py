@@ -278,8 +278,10 @@ def write_markdown_report(inputs: ModelInputs, result: ScenarioResult, path: Pat
             "",
             f"Transport properties are calculated with the **{s['transport_equation_of_state']} equation of state** at {s['transport_eos_temperature_c']:.1f} °C. PR density and compressibility are evaluated iteratively at the representative mean pressure of each segment.",
             "",
-            "| From | To | Route (km) | Flow (Mt/y) | Diameter | Density (kg/m³) | Z | Velocity (m/s) | ΔP (bar) |",
-            "|---|---|---:|---:|---:|---:|---:|---:|---:|",
+            f"Selected material screen: **{s['pipeline_material_label']}**; calculated pipe steel **{s['pipeline_steel_mass_t'] / 1000:,.1f} kt**; wall range **{s['pipeline_wall_thickness_min_mm']:.1f}–{s['pipeline_wall_thickness_max_mm']:.1f} mm**.",
+            "",
+            "| From | To | Route (km) | Flow (Mt/y) | Diameter | Wall (mm) | Density (kg/m³) | Z | Velocity (m/s) | ΔP (bar) |",
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for row in result.pipeline_segments:
@@ -287,7 +289,7 @@ def write_markdown_report(inputs: ModelInputs, result: ScenarioResult, path: Pat
         lines.append(
             f"| {row['from_node']} | {destination} | {row['route_length_km']:.1f} | "
             f"{row['flow_tpy'] / 1e6:.3f} | DN {row['nominal_diameter_mm']:.0f} | "
-            f"{row['eos_density_kg_per_m3']:.1f} | {row['eos_compressibility_factor']:.4f} | "
+            f"{row['wall_thickness_mm']:.1f} | {row['eos_density_kg_per_m3']:.1f} | {row['eos_compressibility_factor']:.4f} | "
             f"{row['velocity_m_per_s']:.2f} | {row['pressure_drop_bar']:.2f} |"
         )
 
@@ -306,6 +308,8 @@ def write_markdown_report(inputs: ModelInputs, result: ScenarioResult, path: Pat
             f"| Direct pipeline leakage | {s['environmental_pipeline_leakage_tco2e_per_year']:,.1f} t CO₂/y |",
             f"| Pipeline use-phase climate burden | {s['environmental_pipeline_use_emissions_tco2e_per_year']:,.1f} t CO₂-eq/y |",
             f"| Pipeline construction climate burden | {s['environmental_pipeline_construction_emissions_tco2e_per_year']:,.1f} t CO₂-eq/y |",
+            f"| Selected pipe-material embodied carbon | {s['environmental_pipeline_material_embodied_carbon_tco2e']:,.1f} t CO₂-eq total inventory |",
+            f"| Annualized material delta versus X65 | {s['environmental_pipeline_material_delta_annualized_tco2e_per_year']:,.1f} t CO₂-eq/y |",
             f"| Total modeled climate burden | {s['environmental_total_climate_burden_tco2e_per_year']:,.1f} t CO₂-eq/y |",
             f"| Lifecycle net CO₂ avoided | {s['environmental_lifecycle_net_avoided_co2_tpy'] / 1e6:.3f} Mt/y |",
             f"| Climate burden intensity | {s['environmental_climate_burden_kgco2e_per_t_received']:.1f} kg CO₂-eq/t received |",
@@ -357,6 +361,9 @@ def write_environmental_outputs(result: ScenarioResult, output_dir: Path) -> Non
         "environmental_pipeline_construction_factor_gco2e_per_tkm",
         "environmental_pipeline_use_emissions_tco2e_per_year",
         "environmental_pipeline_construction_emissions_tco2e_per_year",
+        "environmental_pipeline_material_embodied_carbon_tco2e",
+        "environmental_pipeline_material_delta_vs_baseline_tco2e",
+        "environmental_pipeline_material_delta_annualized_tco2e_per_year",
         "environmental_total_climate_burden_tco2e_per_year",
         "environmental_lifecycle_net_avoided_co2_tpy",
         "environmental_climate_burden_kgco2e_per_t_received",
@@ -410,6 +417,9 @@ def write_scenario_comparison(results: list[ScenarioResult], output_dir: Path) -
         "environmental_climate_burden_kgco2e_per_t_received",
         "environmental_net_avoidance_efficiency_fraction",
         "pipeline_route_length_km",
+        "pipeline_material_id",
+        "pipeline_steel_mass_t",
+        "pipeline_material_embodied_carbon_tco2e",
         "capture_capex_eur",
         "purification_capex_eur",
         "pipeline_capex_eur",
@@ -418,6 +428,7 @@ def write_scenario_comparison(results: list[ScenarioResult], output_dir: Path) -
         "purification_cost_eur_per_t_received",
         "pipeline_cost_eur_per_t_received",
         "full_chain_cost_eur_per_t_received",
+        "full_chain_cost_eur_per_t_lifecycle_net_avoided",
         "full_chain_cost_low_eur_per_t_received",
         "full_chain_cost_high_eur_per_t_received",
     ]

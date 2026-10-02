@@ -24,6 +24,53 @@ co2_leakage_fraction_per_100km = 0.0002
 cost_uncertainty_fraction = 0.35
 equation_of_state = "Peng-Robinson"
 temperature_c = 35.0
+pipeline_material = "x65"
+baseline_pipeline_material = "x65"
+design_pressure_bar = 120.0
+design_factor = 0.72
+minimum_wall_thickness_mm = 6.4
+steel_density_kg_per_m3 = 7850.0
+pipeline_material_cost_fraction = 0.35
+
+[transport.materials.x65]
+label = "Carbon steel X65 · reference"
+smys_mpa = 448.0
+corrosion_allowance_mm = 3.0
+relative_material_price = 1.00
+embodied_carbon_tco2e_per_t_steel = 2.18
+management_note = "Reference carbon-steel case with a screening corrosion allowance."
+
+[transport.materials.x70]
+label = "Carbon steel X70 · higher strength"
+smys_mpa = 483.0
+corrosion_allowance_mm = 3.0
+relative_material_price = 1.05
+embodied_carbon_tco2e_per_t_steel = 2.18
+management_note = "Higher strength can reduce pressure wall, subject to weldability and fracture-control confirmation."
+
+[transport.materials.x80]
+label = "Carbon steel X80 · high strength"
+smys_mpa = 552.0
+corrosion_allowance_mm = 3.0
+relative_material_price = 1.12
+embodied_carbon_tco2e_per_t_steel = 2.18
+management_note = "High-strength option with a procurement and qualification premium."
+
+[transport.materials.x65_low_carbon]
+label = "X65 · low-carbon steel procurement"
+smys_mpa = 448.0
+corrosion_allowance_mm = 3.0
+relative_material_price = 1.08
+embodied_carbon_tco2e_per_t_steel = 0.95
+management_note = "Same hydraulic and strength basis as X65 with a screening green-steel price premium and lower embodied carbon."
+
+[transport.materials.cra_13cr]
+label = "13Cr corrosion-resistant alloy · screening"
+smys_mpa = 450.0
+corrosion_allowance_mm = 1.0
+relative_material_price = 2.40
+embodied_carbon_tco2e_per_t_steel = 4.50
+management_note = "Illustrative corrosion-resistant alternative; full-line use requires a separate materials and welding study."
 
 [transport.eos_composition]
 CO2 = 0.9992

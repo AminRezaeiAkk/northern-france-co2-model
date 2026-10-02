@@ -736,6 +736,127 @@ def _path_edges(node: int, parent: dict[int, int], root: int) -> list[tuple[int,
     return edges
 
 
+def _material_properties(
+    transport: dict[str, Any], material_id: str | None = None
+) -> tuple[str, dict[str, Any]]:
+    """Return one configured pipeline material and fail clearly on bad input."""
+    materials = transport.get("materials", {})
+    selected = material_id or transport.get("pipeline_material", "x65")
+    if selected not in materials:
+        options = ", ".join(sorted(materials))
+        raise ValueError(f"Unknown pipeline material '{selected}'. Available: {options}")
+    return selected, materials[selected]
+
+
+def _pipe_material_metrics(
+    diameter_m: float,
+    length_km: float,
+    transport: dict[str, Any],
+    material_id: str | None = None,
+) -> dict[str, float | str]:
+    """Screen wall thickness, steel mass, cost, and material carbon.
+
+    This is a management-level comparison based on the Barlow pressure relation.
+    It is intentionally not a substitute for a code-compliant mechanical design.
+    The hydraulic diameter is treated as the internal diameter so selecting a
+    material does not alter the already-optimised hydraulic solution.
+    """
+
+    selected_id, selected = _material_properties(transport, material_id)
+    baseline_id = str(transport.get("baseline_pipeline_material", "x65"))
+    _, baseline = _material_properties(transport, baseline_id)
+
+    design_pressure_pa = float(transport.get("design_pressure_bar", 120.0)) * 1.0e5
+    design_factor = float(transport.get("design_factor", 0.72))
+    minimum_wall_m = float(transport.get("minimum_wall_thickness_mm", 6.4)) / 1000.0
+    steel_density = float(transport.get("steel_density_kg_per_m3", 7850.0))
+    material_share = float(transport.get("pipeline_material_cost_fraction", 0.35))
+
+    def calculate(material: dict[str, Any]) -> tuple[float, float, float]:
+        smys_pa = float(material["smys_mpa"]) * 1.0e6
+        corrosion_allowance_m = float(material["corrosion_allowance_mm"]) / 1000.0
+        pressure_wall_m = design_pressure_pa * diameter_m / (2.0 * design_factor * smys_pa)
+        wall_m = max(pressure_wall_m + corrosion_allowance_m, minimum_wall_m)
+        outside_diameter_m = diameter_m + 2.0 * wall_m
+        steel_area_m2 = math.pi * (
+            outside_diameter_m**2 - diameter_m**2
+        ) / 4.0
+        steel_mass_t = steel_area_m2 * length_km * 1000.0 * steel_density / 1000.0
+        embodied_tco2e = steel_mass_t * float(material["embodied_carbon_tco2e_per_t_steel"])
+        return wall_m, steel_mass_t, embodied_tco2e
+
+    wall_m, steel_mass_t, embodied_tco2e = calculate(selected)
+    baseline_wall_m, baseline_mass_t, baseline_embodied_tco2e = calculate(baseline)
+    relative_price = float(selected.get("relative_material_price", 1.0))
+    material_cost_index = (
+        steel_mass_t / baseline_mass_t * relative_price if baseline_mass_t > 0 else 1.0
+    )
+    capex_multiplier = (1.0 - material_share) + material_share * material_cost_index
+
+    return {
+        "pipeline_material_id": selected_id,
+        "pipeline_material_label": str(selected.get("label", selected_id)),
+        "pipeline_material_note": str(selected.get("management_note", "")),
+        "material_smys_mpa": float(selected["smys_mpa"]),
+        "wall_thickness_mm": wall_m * 1000.0,
+        "steel_mass_t": steel_mass_t,
+        "material_embodied_carbon_tco2e": embodied_tco2e,
+        "baseline_wall_thickness_mm": baseline_wall_m * 1000.0,
+        "baseline_steel_mass_t": baseline_mass_t,
+        "baseline_material_embodied_carbon_tco2e": baseline_embodied_tco2e,
+        "material_embodied_carbon_delta_tco2e": embodied_tco2e
+        - baseline_embodied_tco2e,
+        "material_cost_index": material_cost_index,
+        "material_capex_multiplier": capex_multiplier,
+    }
+
+
+def _pipeline_segment_rows(pipeline: dict[str, Any]) -> list[dict[str, Any]]:
+    """Locate the segment table without coupling management tools to a UI key."""
+    for value in pipeline.values():
+        if (
+            isinstance(value, list)
+            and value
+            and isinstance(value[0], dict)
+            and "segment_capex_eur" in value[0]
+        ):
+            return value
+    return []
+
+
+def _enrich_pipeline_material_summary(
+    pipeline: dict[str, Any], transport: dict[str, Any]
+) -> None:
+    segments = _pipeline_segment_rows(pipeline)
+    material_id, material = _material_properties(transport)
+    pipeline.update(
+        {
+            "pipeline_material_id": material_id,
+            "pipeline_material_label": str(material.get("label", material_id)),
+            "pipeline_material_note": str(material.get("management_note", "")),
+            "pipeline_steel_mass_t": sum(
+                float(s.get("steel_mass_t", 0.0)) for s in segments
+            ),
+            "pipeline_material_embodied_carbon_tco2e": sum(
+                float(s.get("material_embodied_carbon_tco2e", 0.0))
+                for s in segments
+            ),
+            "pipeline_material_embodied_carbon_delta_tco2e": sum(
+                float(s.get("material_embodied_carbon_delta_tco2e", 0.0))
+                for s in segments
+            ),
+            "minimum_wall_thickness_mm": min(
+                (float(s.get("wall_thickness_mm", 0.0)) for s in segments),
+                default=0.0,
+            ),
+            "maximum_wall_thickness_mm": max(
+                (float(s.get("wall_thickness_mm", 0.0)) for s in segments),
+                default=0.0,
+            ),
+        }
+    )
+
+
 def _candidate_tree_result(
     graph: nx.Graph,
     nodes: list[dict[str, Any]],
@@ -806,7 +927,9 @@ def _candidate_tree_result(
         diameter = diameter_options[diameter_index[edge]]
         straight, route_factor, route = lengths[edge]
         capex_per_km = transport["capex_eur_per_km_at_300mm"] * (diameter / 0.3) ** transport["diameter_cost_exponent"]
-        capex = capex_per_km * route
+        base_capex = capex_per_km * route
+        material_metrics = _pipe_material_metrics(diameter, route, transport)
+        capex = base_capex * float(material_metrics["material_capex_multiplier"])
         fixed_opex = capex * transport["fixed_opex_fraction"]
         annualized_capex = capex * crf
         segment_annual_cost = annualized_capex + fixed_opex
@@ -827,7 +950,9 @@ def _candidate_tree_result(
                 "flow_tpy": flow,
                 "nominal_diameter_mm": diameter * 1000.0,
                 **hydraulics[edge],
+                "base_segment_capex_eur": base_capex,
                 "segment_capex_eur": capex,
+                **material_metrics,
                 "annualized_segment_capex_eur": annualized_capex,
                 "fixed_opex_eur_per_year": fixed_opex,
                 "segment_annual_cost_eur": segment_annual_cost,
@@ -935,6 +1060,7 @@ def run_scenario(inputs: ModelInputs, scenario_name: str) -> ScenarioResult:
     scenario = inputs.config["scenarios"][scenario_name]
     source_results = build_source_results(inputs, scenario_name)
     pipeline = optimize_pipeline_network(inputs, source_results)
+    _enrich_pipeline_material_summary(pipeline, inputs.config["transport"])
 
     total_allocated = sum(row["allocated_product_co2_tpy"] for row in source_results)
     sink_received = max(total_allocated - pipeline["pipeline_leakage_tpy"], 0.0)
@@ -1009,6 +1135,18 @@ def run_scenario(inputs: ModelInputs, scenario_name: str) -> ScenarioResult:
         "capture_capex_eur": capture_capex,
         "purification_capex_eur": purification_capex,
         "pipeline_capex_eur": pipeline["pipeline_capex_eur"],
+        "pipeline_material_id": pipeline["pipeline_material_id"],
+        "pipeline_material_label": pipeline["pipeline_material_label"],
+        "pipeline_material_note": pipeline["pipeline_material_note"],
+        "pipeline_steel_mass_t": pipeline["pipeline_steel_mass_t"],
+        "pipeline_material_embodied_carbon_tco2e": pipeline[
+            "pipeline_material_embodied_carbon_tco2e"
+        ],
+        "pipeline_material_embodied_carbon_delta_tco2e": pipeline[
+            "pipeline_material_embodied_carbon_delta_tco2e"
+        ],
+        "pipeline_wall_thickness_min_mm": pipeline["minimum_wall_thickness_mm"],
+        "pipeline_wall_thickness_max_mm": pipeline["maximum_wall_thickness_mm"],
         "total_chain_capex_eur": total_capex,
         "capture_annual_cost_eur": capture_annual_cost,
         "purification_annual_cost_eur": purification_annual_cost,
@@ -1021,6 +1159,11 @@ def run_scenario(inputs: ModelInputs, scenario_name: str) -> ScenarioResult:
         "full_chain_cost_low_eur_per_t_received": annual_cost_low / sink_received if sink_received else 0.0,
         "full_chain_cost_high_eur_per_t_received": annual_cost_high / sink_received if sink_received else 0.0,
         "full_chain_cost_eur_per_t_net_avoided": total_annual_cost / chain_net_avoided if chain_net_avoided else 0.0,
+        "full_chain_cost_eur_per_t_lifecycle_net_avoided": (
+            total_annual_cost / environmental["environmental_lifecycle_net_avoided_co2_tpy"]
+            if environmental["environmental_lifecycle_net_avoided_co2_tpy"]
+            else 0.0
+        ),
         "pipeline_route_length_km": pipeline["route_length_km"],
         "pipeline_straight_length_km": pipeline["straight_length_km"],
         "maximum_path_pressure_drop_bar": pipeline["maximum_path_pressure_drop_bar"],
@@ -1048,6 +1191,130 @@ def run_scenario(inputs: ModelInputs, scenario_name: str) -> ScenarioResult:
     )
 
 
+def build_material_comparison(
+    result: ScenarioResult,
+    config: dict[str, Any],
+    carbon_value_eur_per_t: float = 100.0,
+) -> list[dict[str, Any]]:
+    """Compare configured materials on the selected topology and diameters.
+
+    The comparison deliberately holds the network layout and hydraulic diameters
+    fixed. It is a transparent pre-FEED decision screen, not a mechanical design or
+    a claim that a material is suitable without fracture, corrosion, weldability,
+    impurity, terrain, and code checks.
+    """
+
+    transport = config["transport"]
+    finance = config["finance"]
+    years = float(finance["project_life_years"])
+    crf = capital_recovery_factor(
+        float(finance["discount_rate"]), int(finance["project_life_years"])
+    )
+    source_connections = int(result.summary["active_sources"])
+    connection_capex = source_connections * float(
+        transport["source_connection_capex_eur"]
+    )
+    received = float(result.summary["sink_received_after_pipeline_leakage_tpy"])
+    captured_product = float(result.summary["total_allocated_to_pipeline_tpy"])
+    base_environmental_burden = float(
+        result.summary["environmental_total_climate_burden_tco2e_per_year"]
+    ) - float(
+        result.summary.get(
+            "environmental_pipeline_material_delta_annualized_tco2e_per_year",
+            0.0,
+        )
+    )
+
+    rows: list[dict[str, Any]] = []
+    for material_id, material in transport.get("materials", {}).items():
+        segment_capex = 0.0
+        steel_mass = 0.0
+        embodied = 0.0
+        embodied_delta = 0.0
+        wall_values: list[float] = []
+        for segment in result.pipeline_segments:
+            metrics = _pipe_material_metrics(
+                float(segment["nominal_diameter_mm"]) / 1000.0,
+                float(segment["route_length_km"]),
+                transport,
+                material_id,
+            )
+            base_capex = float(
+                segment.get("base_segment_capex_eur", segment["segment_capex_eur"])
+            )
+            segment_capex += base_capex * float(
+                metrics["material_capex_multiplier"]
+            )
+            steel_mass += float(metrics["steel_mass_t"])
+            embodied += float(metrics["material_embodied_carbon_tco2e"])
+            embodied_delta += float(metrics["material_embodied_carbon_delta_tco2e"])
+            wall_values.append(float(metrics["wall_thickness_mm"]))
+
+        pipeline_capex = segment_capex + connection_capex
+        pipeline_annual_cost = pipeline_capex * (
+            crf + float(transport["fixed_opex_fraction"])
+        )
+        total_capex = (
+            float(result.summary["capture_capex_eur"])
+            + float(result.summary["purification_capex_eur"])
+            + pipeline_capex
+        )
+        total_annual_cost = (
+            float(result.summary["capture_annual_cost_eur"])
+            + float(result.summary["purification_annual_cost_eur"])
+            + pipeline_annual_cost
+        )
+        material_delta_annual = embodied_delta / years if years > 0 else 0.0
+        environmental_burden = base_environmental_burden + material_delta_annual
+        lifecycle_net_avoided = max(captured_product - environmental_burden, 0.0)
+        annual_carbon_value = lifecycle_net_avoided * carbon_value_eur_per_t
+        annual_value_headroom = annual_carbon_value - total_annual_cost
+        payback = (
+            total_capex / annual_value_headroom
+            if annual_value_headroom > 0
+            else None
+        )
+
+        rows.append(
+            {
+                "material_id": material_id,
+                "material": str(material.get("label", material_id)),
+                "management_note": str(material.get("management_note", "")),
+                "smys_mpa": float(material["smys_mpa"]),
+                "wall_thickness_min_mm": min(wall_values, default=0.0),
+                "wall_thickness_max_mm": max(wall_values, default=0.0),
+                "pipeline_steel_mass_t": steel_mass,
+                "pipeline_material_embodied_carbon_tco2e": embodied,
+                "material_embodied_intensity_kgco2e_per_t_received": (
+                    embodied * 1000.0 / (received * years)
+                    if received > 0 and years > 0
+                    else 0.0
+                ),
+                "pipeline_capex_eur": pipeline_capex,
+                "total_chain_capex_eur": total_capex,
+                "total_chain_annual_cost_eur": total_annual_cost,
+                "full_chain_cost_eur_per_t_received": (
+                    total_annual_cost / received if received > 0 else 0.0
+                ),
+                "full_chain_cost_eur_per_t_net_avoided": (
+                    total_annual_cost / lifecycle_net_avoided
+                    if lifecycle_net_avoided > 0
+                    else 0.0
+                ),
+                "environmental_total_climate_burden_tco2e_per_year": environmental_burden,
+                "environmental_lifecycle_net_avoided_co2_tpy": lifecycle_net_avoided,
+                "annual_carbon_value_eur": annual_carbon_value,
+                "annual_value_headroom_eur": annual_value_headroom,
+                "simple_payback_years": payback,
+                "calculation_basis": (
+                    "Same optimized topology and hydraulic diameters; "
+                    "material-sensitive cost and embodied-carbon screen."
+                ),
+            }
+        )
+    return rows
+
+
 def run_custom_scenario(
     inputs: ModelInputs,
     *,
@@ -1056,6 +1323,7 @@ def run_custom_scenario(
     sink_capacity_tpy: float,
     enforce_sink_capacity: bool = True,
     finance_overrides: dict[str, float] | None = None,
+    transport_overrides: dict[str, str] | None = None,
     scenario_name: str = "custom_case",
 ) -> ScenarioResult:
     """Run a UI-defined case without changing any files on disk."""
@@ -1079,6 +1347,17 @@ def run_custom_scenario(
         if unexpected:
             raise ValueError(f"Unsupported finance overrides: {', '.join(unexpected)}")
         custom_config["finance"].update(finance_overrides)
+    if transport_overrides:
+        unexpected = sorted(set(transport_overrides) - {"pipeline_material"})
+        if unexpected:
+            raise ValueError(
+                f"Unsupported transport overrides: {', '.join(unexpected)}"
+            )
+        material_id = transport_overrides.get("pipeline_material")
+        materials = custom_config["transport"].get("materials", {})
+        if material_id not in materials:
+            raise ValueError(f"Unknown pipeline material: {material_id}")
+        custom_config["transport"]["pipeline_material"] = material_id
     custom_config["scenarios"][scenario_name] = {
         "description": "User-defined source selection and assumptions from the interactive dashboard.",
         "flow_basis": flow_basis,

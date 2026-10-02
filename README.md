@@ -25,9 +25,11 @@ No command-line knowledge is required.
 
 1. Start with **Announced projects · 2030**. This is the most defensible base case because it uses the named CalCC and K6 project flows.
 2. Use the three engineering cards to explain the flow from captured CO₂ to purified product to Dunkerque receipt, then open the environmental study.
-3. Open the **Capture**, **Purification**, **Transport to sink** and **Environmental study** tabs in order.
-4. Switch to **Verified 2024 cluster potential** to discuss the wider regional opportunity and its larger uncertainty.
-5. Use **Build a custom case** only when the group wants to include/exclude sources or test economic assumptions.
+3. Read the independent **Executive decision gates**; a red gate is not hidden by a composite score.
+4. Open the **Capture**, **Purification**, **Transport to sink**, **Environmental study** and **Decision lab** tabs in order.
+5. In the Decision lab, compare material cost and embodied carbon and explain the result at the selected CO₂-value threshold.
+6. Switch to **Verified 2024 cluster potential** to discuss the wider regional opportunity and its larger uncertainty.
+7. Use **Build a custom case** only when the group wants to include/exclude sources or test economic assumptions.
 
 See `docs/USER_GUIDE.md` for a short facilitator guide.
 
@@ -84,6 +86,7 @@ These are screening/pre-FEED estimates, not vendor quotations or a routed constr
 - Darcy–Weisbach pressure loss and Swamee–Jain friction;
 - velocity and minimum-arrival-pressure constraints;
 - installed pipeline CAPEX, O&M and estimated leakage.
+- a comparative X65/X70/X80/low-carbon-X65/13Cr screen using Barlow pressure wall, steel mass, a material-sensitive CAPEX share and material embodied carbon.
 
 ### Environmental study
 
@@ -93,6 +96,14 @@ These are screening/pre-FEED estimates, not vendor quotations or a routed constr
 - transport-mode climate benchmarks;
 - lifecycle net avoided CO₂ and burden intensity;
 - explicit exclusions for route-specific biodiversity, land, water, noise and local air impacts until GIS/FEED data exist.
+
+### Management decision lab
+
+- independent traffic-light gates for economics, hydraulics, receiver utilization, source maturity and quality evidence;
+- material cost-versus-carbon comparison on the same optimized network and diameters;
+- annual value headroom and indicative simple payback at a user-selected CO₂ value;
+- ranked one-at-a-time exposure of levelized cost to ±20% input changes;
+- explicit warnings that the material calculation is a pre-FEED screen, not final code-compliant mechanical selection.
 
 Equations, stage assumptions, uncertainty ranges and limitations are documented in `docs/assumptions.md`. Source corrections and IREP reconciliation are in `docs/data_quality_register.md`.
 
@@ -138,4 +149,8 @@ python -m unittest discover -s tests -v
 - 3D/DMX Dunkerque pilot: https://innovation-centre-for-industrial-transformation.ec.europa.eu/innovative-techniques/carbon-capture-blast-furnace-flue-gas-emissions-absorption-using-amine
 - Northern Lights product specification: https://norlights.com/wp-content/uploads/2025/06/Liquid-specification-2306251.pdf
 - NETL pipeline method and cost guidance: https://www.netl.doe.gov/projects/files/QualityGuidelinesforEnergySystemStudiesCarbonDioxideTransportandStorageCostsinNETLStudies_073124.pdf
+- ISO 27913:2024 CO₂ pipeline transportation systems: https://www.iso.org/standard/84840.html
+- ISO 3183:2019 steel line pipe: https://www.iso.org/standard/76676.html
+- DNV-RP-F104 CO₂ pipeline design and operation: https://www.dnv.com/energy/standards-guidelines/dnv-rp-f104-design-and-operation-of-carbon-dioxide-pipelines/
+- worldsteel 2024 GHG intensity screening anchor: https://worldsteel.org/wider-sustainability/sustainability-indicators/
 - JRC industrial capture assessment: https://publications.jrc.ec.europa.eu/repository/handle/JRC146193

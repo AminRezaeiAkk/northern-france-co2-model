@@ -76,6 +76,18 @@ def calculate_environmental_study(
 
     pipeline_use_emissions = tonne_km_per_year * pipeline_use_factor / 1_000_000.0
     pipeline_construction_emissions = tonne_km_per_year * construction_factor / 1_000_000.0
+    project_life_years = float(config["finance"]["project_life_years"])
+    material_embodied_total = float(
+        pipeline.get("pipeline_material_embodied_carbon_tco2e", 0.0)
+    )
+    material_embodied_delta_total = float(
+        pipeline.get("pipeline_material_embodied_carbon_delta_tco2e", 0.0)
+    )
+    material_embodied_delta_annual = (
+        material_embodied_delta_total / project_life_years
+        if project_life_years > 0
+        else 0.0
+    )
 
     capture_energy_emissions = sum(float(row["capture_energy_emissions_tpy"]) for row in source_results)
     purification_energy_emissions = sum(float(row["purification_energy_emissions_tpy"]) for row in source_results)
@@ -94,6 +106,7 @@ def calculate_environmental_study(
         + pipeline_leakage
         + pipeline_use_emissions
         + pipeline_construction_emissions
+        + material_embodied_delta_annual
     )
     lifecycle_net_avoided = max(allocated_product - total_burden, 0.0)
 
@@ -137,6 +150,9 @@ def calculate_environmental_study(
         "environmental_pipeline_construction_factor_gco2e_per_tkm": construction_factor,
         "environmental_pipeline_use_emissions_tco2e_per_year": pipeline_use_emissions,
         "environmental_pipeline_construction_emissions_tco2e_per_year": pipeline_construction_emissions,
+        "environmental_pipeline_material_embodied_carbon_tco2e": material_embodied_total,
+        "environmental_pipeline_material_delta_vs_baseline_tco2e": material_embodied_delta_total,
+        "environmental_pipeline_material_delta_annualized_tco2e_per_year": material_embodied_delta_annual,
         "environmental_total_climate_burden_tco2e_per_year": total_burden,
         "environmental_lifecycle_net_avoided_co2_tpy": lifecycle_net_avoided,
         "environmental_climate_burden_kgco2e_per_t_received": burden_per_t_received * 1000.0,
@@ -144,6 +160,7 @@ def calculate_environmental_study(
         "environmental_transport_benchmarks": benchmark_rows,
         "environmental_limitations": [
             "The transport lifecycle factors are screening values, not a project-specific EPD or ISO-compliant LCA.",
+            "Only the selected material's embodied-carbon difference versus the X65 reference is added to the annual burden; the generic construction factor already represents the baseline pipeline construction burden.",
             "Biodiversity, land occupation, water impacts, construction crossings, noise and local air-quality impacts require a routed corridor and site-specific inventory.",
             "No downstream terminal, shipping, injection or geological-storage impacts are included because they remain outside the model boundary.",
         ],

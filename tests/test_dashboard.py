@@ -24,7 +24,13 @@ class DashboardSmokeTests(unittest.TestCase):
     def test_dashboard_has_engineering_and_environmental_tabs(self) -> None:
         self.assertEqual(
             [tab.label for tab in self.dashboard.tabs],
-            ["1  Capture", "2  Purification", "3  Transport to sink", "4  Environmental study"],
+            [
+                "1  Capture",
+                "2  Purification",
+                "3  Transport to sink",
+                "4  Environmental study",
+                "5  Decision lab",
+            ],
         )
 
     def test_default_scenario_and_run_control_are_present(self) -> None:
